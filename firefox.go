@@ -46,6 +46,7 @@ var defaultProfile = map[string]string{
 	"webdriver_enable_native_events":            "true",
 }
 
+// FirefoxProfile ...
 type FirefoxProfile struct {
 	Root string
 }

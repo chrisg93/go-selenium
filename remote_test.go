@@ -19,9 +19,9 @@ func init() {
 	caps["browserName"] = *browserName
 }
 
-var caps Capabilities = make(Capabilities)
+var caps = make(Capabilities)
 
-var runOnSauce *bool = flag.Bool("saucelabs", false, "run on sauce")
+var runOnSauce = flag.Bool("saucelabs", false, "run on sauce")
 
 func newRemote(testName string, t *testing.T) (wd WebDriver) {
 	var err error
@@ -98,6 +98,14 @@ func TestCapabilities(t *testing.T) {
 	if c["browserName"] != caps["browserName"] {
 		t.Fatalf("bad browser name - %s", c["browserName"])
 	}
+}
+
+func TestSetTimeouts(t *testing.T) {
+	t.Parallel()
+	wd := newRemote("TestSetTimeouts", t).T(t)
+	defer wd.Quit()
+
+	wd.SetTimeouts(200)
 }
 
 func TestSetAsyncScriptTimeout(t *testing.T) {
@@ -331,7 +339,7 @@ func TestClick(t *testing.T) {
 	input := wd.FindElement(ByName, "q")
 	input.SendKeys("golang")
 
-	button := wd.FindElement(ById, "submit")
+	button := wd.FindElement(ByID, "submit")
 	button.Click()
 
 	if !strings.Contains(wd.PageSource(), "The Go Programming Language") {
@@ -403,7 +411,7 @@ func TestLocation(t *testing.T) {
 	defer wd.Quit()
 
 	wd.Get(serverURL)
-	button := wd.FindElement(ById, "submit")
+	button := wd.FindElement(ByID, "submit")
 
 	loc := button.Location()
 
@@ -418,7 +426,7 @@ func TestLocationInView(t *testing.T) {
 	defer wd.Quit()
 
 	wd.Get(serverURL)
-	button := wd.FindElement(ById, "submit")
+	button := wd.FindElement(ByID, "submit")
 
 	loc := button.LocationInView()
 
@@ -433,7 +441,7 @@ func TestSize(t *testing.T) {
 	defer wd.Quit()
 
 	wd.Get(serverURL)
-	button := wd.FindElement(ById, "submit")
+	button := wd.FindElement(ByID, "submit")
 
 	size := button.Size()
 
@@ -480,7 +488,7 @@ func TestIsSelected(t *testing.T) {
 	defer wd.Quit()
 
 	wd.Get(serverURL)
-	elem := wd.FindElement(ById, "chuk")
+	elem := wd.FindElement(ByID, "chuk")
 
 	selected := elem.IsSelected()
 	if selected {

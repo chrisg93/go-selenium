@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// A single-return-value interface to WebDriverT that is useful when using WebDrivers in test code.
+// WebDriverT : A single-return-value interface to WebDriverT that is useful when using WebDrivers in test code.
 // Obtain a WebDriverT by calling webDriver.T(t), where t *testing.T is the test handle for the
 // current test. The methods of WebDriverT call wt.t.Fatalf upon encountering errors instead of using
 // multiple returns to indicate errors.
@@ -19,6 +19,7 @@ type WebDriverT interface {
 
 	SetAsyncScriptTimeout(ms uint)
 	SetImplicitWaitTimeout(ms uint)
+	SetTimeouts(ms uint)
 	Quit()
 
 	CurrentWindowHandle() string
@@ -86,6 +87,12 @@ func (wt *webDriverT) NewSession() (id string) {
 		fatalf(wt.t, "NewSession: %s", err)
 	}
 	return
+}
+
+func (wt *webDriverT) SetTimeouts(ms uint) {
+	if err := wt.d.SetTimeouts(ms); err != nil {
+		fatalf(wt.t, "SetTimeouts(%d msec): %s", ms, err)
+	}
 }
 
 func (wt *webDriverT) SetAsyncScriptTimeout(ms uint) {
@@ -223,8 +230,8 @@ func (wt *webDriverT) Refresh() {
 }
 
 func (wt *webDriverT) FindElement(by, value string) (elem WebElementT) {
-	if elem_, err := wt.d.FindElement(by, value); err == nil {
-		elem = elem_.T(wt.t)
+	if elemFound, err := wt.d.FindElement(by, value); err == nil {
+		elem = elemFound.T(wt.t)
 	} else {
 		fatalf(wt.t, "FindElement(by=%q, value=%q): %s", by, value, err)
 	}
@@ -232,8 +239,8 @@ func (wt *webDriverT) FindElement(by, value string) (elem WebElementT) {
 }
 
 func (wt *webDriverT) FindElements(by, value string) (elems []WebElementT) {
-	if elems_, err := wt.d.FindElements(by, value); err == nil {
-		for _, elem := range elems_ {
+	if elemsFound, err := wt.d.FindElements(by, value); err == nil {
+		for _, elem := range elemsFound {
 			elems = append(elems, elem.T(wt.t))
 		}
 	} else {
@@ -366,7 +373,7 @@ func (wt *webDriverT) ExecuteScriptAsync(script string, args []interface{}) (res
 	return
 }
 
-// A single-return-value interface to WebElement that is useful when using WebElements in test code.
+// WebElementT : A single-return-value interface to WebElement that is useful when using WebElements in test code.
 // Obtain a WebElementT by calling webElement.T(t), where t *testing.T is the test handle for the
 // current test. The methods of WebElementT call wt.fatalf upon encountering errors instead of using
 // multiple returns to indicate errors.
@@ -439,25 +446,30 @@ func (wt *webElementT) MoveTo(xOffset, yOffset int) {
 }
 
 func (wt *webElementT) FindElement(by, value string) WebElementT {
-	if elem, err := wt.e.FindElement(by, value); err == nil {
+	elem, err := wt.e.FindElement(by, value)
+
+	if err == nil {
 		return elem.T(wt.t)
-	} else {
-		fatalf(wt.t, "FindElement(by=%q, value=%q): %s", by, value, err)
-		panic("unreachable")
 	}
+
+	fatalf(wt.t, "FindElement(by=%q, value=%q): %s", by, value, err)
+	panic("unreachable")
 }
 
 func (wt *webElementT) FindElements(by, value string) []WebElementT {
-	if elems, err := wt.e.FindElements(by, value); err == nil {
+	elems, err := wt.e.FindElements(by, value)
+
+	if err == nil {
 		elemsT := make([]WebElementT, len(elems))
 		for i, elem := range elems {
 			elemsT[i] = elem.T(wt.t)
 		}
 		return elemsT
-	} else {
-		fatalf(wt.t, "FindElements(by=%q, value=%q): %s", by, value, err)
-		panic("unreachable")
 	}
+
+	fatalf(wt.t, "FindElements(by=%q, value=%q): %s", by, value, err)
+	panic("unreachable")
+
 }
 
 func (wt *webElementT) Q(sel string) (elem WebElementT) {

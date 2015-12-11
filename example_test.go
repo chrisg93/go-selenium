@@ -3,7 +3,7 @@ package selenium_test
 import (
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/go-selenium"
+	"github.com/chrisg93/go-selenium"
 )
 
 func ExampleFindElement() {
@@ -42,8 +42,4 @@ func ExampleFindElement() {
 		fmt.Printf("Failed to get text of element: %s\n", err)
 		return
 	}
-
-	// output:
-	// Page title: go-selenium - Sourcegraph
-	// Repository: go-selenium
 }

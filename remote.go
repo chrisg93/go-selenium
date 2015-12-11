@@ -19,7 +19,10 @@ import (
 	"strings"
 )
 
+// Log should be used as logger
 var Log = log.New(os.Stderr, "[selenium] ", log.Ltime|log.Lmicroseconds)
+
+// Trace ...
 var Trace bool
 
 /* Errors returned by Selenium server. */
@@ -46,6 +49,7 @@ var errorCodes = map[int]string{
 }
 
 const (
+	// SUCCESS ...
 	SUCCESS         = 0
 	defaultExecutor = "http://127.0.0.1:4444/wd/hub"
 	jsonMIMEType    = "application/json"
@@ -115,7 +119,7 @@ func (wd *remoteWebDriver) execute(method, url string, data []byte) ([]byte, err
 		reply := new(reply)
 		err := json.Unmarshal(buf, reply)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Bad server reply status: %s", res.Status))
+			return nil, fmt.Errorf("Bad server reply status: %s", res.Status)
 		}
 		message, ok := errorCodes[reply.Status]
 		if !ok {
@@ -169,7 +173,7 @@ var httpClient = http.Client{
 
 // Server reply to WebDriver command.
 type reply struct {
-	SessionId string
+	SessionID string
 	Status    int
 	Value     json.RawMessage
 }
@@ -178,16 +182,15 @@ func (r *reply) readValue(v interface{}) error {
 	return json.Unmarshal(r.Value, v)
 }
 
-// An active session.
+// Session is an active session.
 type Session struct {
-	Id           string
+	ID           string
 	Capabilities Capabilities
 }
 
-/* Create new remote client, this will also start a new session.
-   capabilities - the desired capabilities, see http://goo.gl/SNlAk
-   executor - the URL to the Selenim server
-*/
+// NewRemote creates new remote client, this will also start a new session.
+// capabilities - the desired capabilities, see http://goo.gl/SNlAk
+// executor - the URL to the Selenim server
 func NewRemote(capabilities Capabilities, executor string) (WebDriver, error) {
 
 	if executor == "" {
@@ -259,7 +262,7 @@ func (wd *remoteWebDriver) Sessions() (sessions []Session, err error) {
 	return
 }
 
-func (wd *remoteWebDriver) NewSession() (sessionId string, err error) {
+func (wd *remoteWebDriver) NewSession() (sessionID string, err error) {
 	message := map[string]interface{}{
 		"desiredCapabilities": wd.capabilities,
 	}
@@ -268,8 +271,8 @@ func (wd *remoteWebDriver) NewSession() (sessionId string, err error) {
 		return
 	}
 	if r, err := wd.send("POST", wd.url("/session"), data); err == nil {
-		sessionId = r.SessionId
-		wd.id = r.SessionId
+		sessionID = r.SessionID
+		wd.id = r.SessionID
 	}
 	return
 }
@@ -284,6 +287,27 @@ func (wd *remoteWebDriver) Capabilities() (v Capabilities, err error) {
 
 type timeoutParam struct {
 	Ms uint `json:"ms"`
+}
+
+type timeoutsParam struct {
+	Type string `json:"type"`
+	Ms   uint   `json:"ms"`
+}
+
+func (wd *remoteWebDriver) SetTimeouts(ms uint) error {
+	err := wd.voidCommand("/session/%s/timeouts", timeoutsParam{Type: "script", Ms: ms})
+
+	if err != nil {
+		return err
+	}
+
+	err = wd.voidCommand("/session/%s/timeouts", timeoutsParam{Type: "implicit", Ms: ms})
+
+	if err != nil {
+		return err
+	}
+
+	return wd.voidCommand("/session/%s/timeouts", timeoutsParam{Type: "page load", Ms: ms})
 }
 
 func (wd *remoteWebDriver) SetAsyncScriptTimeout(ms uint) error {
@@ -384,11 +408,13 @@ func decodeElement(wd *remoteWebDriver, r *reply) WebElement {
 }
 
 func (wd *remoteWebDriver) FindElement(by, value string) (WebElement, error) {
-	if res, err := wd.find(by, value, "", ""); err == nil {
+	res, err := wd.find(by, value, "", "")
+
+	if err == nil {
 		return decodeElement(wd, res), nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 func decodeElements(wd *remoteWebDriver, r *reply) (welems []WebElement) {
@@ -403,11 +429,13 @@ func decodeElements(wd *remoteWebDriver, r *reply) (welems []WebElement) {
 }
 
 func (wd *remoteWebDriver) FindElements(by, value string) ([]WebElement, error) {
-	if res, err := wd.find(by, value, "s", ""); err == nil {
+	res, err := wd.find(by, value, "s", "")
+
+	if err == nil {
 		return decodeElements(wd, res), nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 func (wd *remoteWebDriver) Q(sel string) (WebElement, error) {
@@ -472,11 +500,14 @@ func (wd *remoteWebDriver) SwitchFrameParent() error {
 
 func (wd *remoteWebDriver) ActiveElement() (WebElement, error) {
 	url := wd.url("/session/%s/element/active", wd.id)
-	if r, err := wd.send("GET", url, nil); err == nil {
+
+	r, err := wd.send("GET", url, nil)
+
+	if err == nil {
 		return decodeElement(wd, r), nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 func (wd *remoteWebDriver) GetCookies() (c []Cookie, err error) {

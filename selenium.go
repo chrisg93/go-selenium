@@ -1,8 +1,8 @@
-package selenium // import "sourcegraph.com/sourcegraph/go-selenium"
+package selenium
 
 /* Element finding options */
 const (
-	ById              = "id"
+	ByID              = "id"
 	ByXPATH           = "xpath"
 	ByLinkText        = "link text"
 	ByPartialLinkText = "partial link text"
@@ -78,39 +78,38 @@ const (
 	MetaKey       = string('\ue03d')
 )
 
-/* Browser capabilities, see
-http://code.google.com/p/selenium/wiki/JsonWireProtocol#Capabilities_JSON_Object
-*/
+// Capabilities : Browser capabilities, see
+// http://code.google.com/p/selenium/wiki/JsonWireProtocol#Capabilities_JSON_Object
 type Capabilities map[string]interface{}
 
-/* Build object, part of Status return. */
+// Build object, part of Status return.
 type Build struct {
 	Version, Revision, Time string
 }
 
-/* OS object, part of Status return. */
+// OS object, part of Status return.
 type OS struct {
 	Arch, Name, Version string
 }
 
-/* Information retured by Status method. */
+// Status : Information retured by Status method.
 type Status struct {
 	Build `json:"build"`
 	OS    `json:"os"`
 }
 
-/* Point */
+// Point ...
 type Point struct {
 	X, Y float64
 }
 
-/* Size */
+// Size ...
 type Size struct {
 	Width  float64 `json:"width"`
 	Height float64 `json:"height"`
 }
 
-/* Cookie */
+// Cookie ...
 type Cookie struct {
 	Name   string `json:"name"`
 	Value  string `json:"value"`
@@ -120,6 +119,7 @@ type Cookie struct {
 	Expiry uint   `json:"expiry"`
 }
 
+// WebDriver ...
 type WebDriver interface {
 	/* Status (info) on server */
 	Status() (*Status, error)
@@ -132,6 +132,8 @@ type WebDriver interface {
 
 	/* Current session capabilities */
 	Capabilities() (Capabilities, error)
+	/* Set the amount of time, in milliseconds, for all timeouts. */
+	SetTimeouts(ms uint) error
 	/* Set the amount of time, in milliseconds, that asynchronous scripts are permitted to run before they are aborted. */
 	SetAsyncScriptTimeout(ms uint) error
 	/* Set the amount of time, in milliseconds, the driver should wait when searching for elements. */
@@ -257,6 +259,7 @@ type WebDriver interface {
 	T(t TestingT) WebDriverT
 }
 
+// WebElement ...
 type WebElement interface {
 	// Manipulation
 
